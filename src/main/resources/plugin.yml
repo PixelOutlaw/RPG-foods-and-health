@@ -1,0 +1,14 @@
+name: RPGFoodsAndHealth
+version: ${project.version}
+main: land.face.foods.FoodsPlugin
+api-version: 1.14
+depend: [Facecore]
+softdepend: [Strife]
+
+commands:
+  food:
+    aliases: [food]
+
+permissions:
+  foods.command.stats:
+    default: true
