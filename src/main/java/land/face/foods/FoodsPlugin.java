@@ -29,14 +29,6 @@ public class FoodsPlugin extends FacePlugin {
   private StrifePlugin strifePlugin;
 
   //nutrient maps tracker
-  /*
-  public Map<UUID, Integer> healthyBois = new HashMap<UUID, Integer>();
-  public Map<UUID, Integer> proteinMap = new HashMap<UUID, Integer>();
-  public Map<UUID, Integer> carbohydratesMap = new HashMap<UUID, Integer>();
-  public Map<UUID, Integer> dairyMap = new HashMap<UUID, Integer>();
-  public Map<UUID, Integer> vegetablesMap = new HashMap<UUID, Integer>();
-  public Map<UUID, Integer> healthScore = new HashMap<UUID, Integer>();
-  */
   public Map<UUID, HealthStatus> healthStatus = new HashMap<UUID, HealthStatus>();
 
   //tasks
