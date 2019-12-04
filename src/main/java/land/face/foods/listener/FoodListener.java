@@ -19,9 +19,13 @@
 package land.face.foods.listener;
 
 import land.face.foods.FoodsPlugin;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+
+import java.io.File;
 
 public class FoodListener implements Listener {
 
@@ -35,4 +39,20 @@ public class FoodListener implements Listener {
   public void onEntityDeathEvent(FoodLevelChangeEvent event) {
     // ????
   }
+
+  @EventHandler
+  public void onJoin(PlayerJoinEvent event){
+    //when a player joins
+    Player player = event.getPlayer();
+
+    File fileName = new File(plugin.getDataFolder() + "/data", player.getUniqueId().toString() + ".yml");
+    if (!fileName.exists()) {
+      plugin.createPlayerFile(player.getUniqueId());
+      return;
+    }
+    //plugin.getServer().getLogger().info("Filename : " + fileName.getName() + "player: " + player.getName());
+    plugin.loadPlayerFile(fileName, player.getUniqueId());
+  }
+
+  
 }
