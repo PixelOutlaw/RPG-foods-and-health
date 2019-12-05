@@ -1,4 +1,4 @@
-package land.face.foods.managers;
+package land.face.foods.tasks;
 
 import land.face.foods.FoodsPlugin;
 import org.bukkit.Bukkit;

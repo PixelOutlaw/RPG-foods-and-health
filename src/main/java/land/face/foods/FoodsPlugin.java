@@ -1,6 +1,5 @@
 package land.face.foods;
 
-import com.sun.javafx.collections.MappingChange;
 import com.tealcube.minecraft.bukkit.facecore.plugin.FacePlugin;
 import io.pixeloutlaw.minecraft.spigot.config.MasterConfiguration;
 import io.pixeloutlaw.minecraft.spigot.config.VersionedConfiguration;
@@ -11,14 +10,16 @@ import java.util.*;
 
 import land.face.foods.listener.FoodCommands;
 import land.face.foods.listener.FoodListener;
-import land.face.foods.managers.FoodTask;
-import land.face.foods.managers.HealthStatus;
+import land.face.foods.tasks.FoodTask;
+import land.face.foods.objects.HealthStatus;
+import land.face.foods.objects.RPGFoods;
 import land.face.strife.StrifePlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 public class FoodsPlugin extends FacePlugin {
 
@@ -30,6 +31,8 @@ public class FoodsPlugin extends FacePlugin {
 
   //nutrient maps tracker
   public Map<UUID, HealthStatus> healthStatus = new HashMap<UUID, HealthStatus>();
+  //rpg foods map
+  public Map<String, RPGFoods> rpgFoods = new HashMap<String, RPGFoods>();
 
   //tasks
   FoodTask foodTask = new FoodTask(this);
@@ -39,6 +42,20 @@ public class FoodsPlugin extends FacePlugin {
   //loading config data
   public int maxHealth = 0;
   public int minHealth = 0;
+
+  public void createRPGFoodFile(){
+    File rpgFoodFile = new File(getDataFolder(), "RPGFoods.yml");
+
+    if (!rpgFoodFile.exists()) {
+      try {
+        rpgFoodFile.createNewFile();
+      } catch (IOException e1) {
+        e1.printStackTrace();
+      }
+    }
+
+  }
+
 
   public void createPlayerFile(UUID uuid) {
 
@@ -135,6 +152,10 @@ public class FoodsPlugin extends FacePlugin {
     //commands
     this.getCommand("RPGFood").setExecutor(new FoodCommands(this));
 
+    //create rpg food file
+    createRPGFoodFile();
+    loadFoodObjects();
+
     //foodtask
     foodTask.runTaskTimer(this,
             20L  * 30, // Start save after 30seconds
@@ -183,6 +204,57 @@ public class FoodsPlugin extends FacePlugin {
   public int getHealthMultiplier(UUID uuid){
     int healthMultiplier = minHealth + (maxHealth - minHealth) * (healthStatus.get(uuid).getHealthScore() / 100);
     return healthMultiplier;
+  }
+
+  public void loadFoodObjects(){
+    //load in food objects :(
+
+    File rpgFoodFile = new File(getDataFolder(), "RPGFoods.yml");
+
+    FileConfiguration foodConfig = YamlConfiguration.loadConfiguration(rpgFoodFile);
+
+    for (String mainKey : foodConfig.getKeys(false)){
+
+      for (String key : foodConfig.getConfigurationSection(mainKey).getKeys(false)){
+
+        RPGFoods food = new RPGFoods();
+
+        food.setFoodName(foodConfig.getString(mainKey + "." + key +".display-name"));
+        food.setFoodItem(foodConfig.getString(mainKey));
+        food.setCustomData(foodConfig.getInt(mainKey + "." + key +".custom-data"));
+        food.setFoodRestored(foodConfig.getInt(mainKey + "." + key +".food-restored"));
+        food.setHealthRestored(foodConfig.getInt(mainKey + "." + key +".health-restored"));
+
+        for (String strifeBuffs : foodConfig.getStringList(mainKey + "." + key + ".buffs-applied")){
+          food.setStrifeBuffs(strifeBuffs);
+        }
+
+        for (String nutrients : foodConfig.getConfigurationSection(mainKey + "." + key + ".nutrients").getKeys(false)){
+          food.setNutrients(nutrients, foodConfig.getInt(mainKey + "." + key + ".nutrients" + "." + nutrients));
+        }
+
+        for (String potions : foodConfig.getConfigurationSection(mainKey + "." + key + ".potion-effects").getKeys(false)){
+
+          //String potionType = foodConfig.getString(mainKey + "." + key + ".potion-effects." + potions);
+          PotionEffectType potionEffectType = PotionEffectType.getByName(potions);
+
+          PotionEffect potion = new PotionEffect(potionEffectType,
+                  foodConfig.getInt(mainKey + "." + key +".potion-effects." + potions +".intensity"),
+                  foodConfig.getInt(mainKey + "." + key +".potion-effects." + potions +".duration"));
+          food.setPotionEffects(potion);
+        }
+
+
+
+        rpgFoods.put(food.getFoodName(), food);
+        //getServer().getLogger().info(food.getFoodName() + food.getNutrients() + food.getPotionEffects() +"");
+
+      }
+
+    }
+
+
+
   }
 
 }

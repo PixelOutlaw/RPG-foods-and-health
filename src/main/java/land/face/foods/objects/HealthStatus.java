@@ -1,4 +1,4 @@
-package land.face.foods.managers;
+package land.face.foods.objects;
 
 import org.bukkit.entity.Player;
 
