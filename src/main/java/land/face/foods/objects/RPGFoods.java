@@ -23,6 +23,8 @@ public class RPGFoods {
     private List<PotionEffect> potionEffects = new ArrayList<>();
     private int customData;
 
+    public static final NutrientType[] types = NutrientType.values();
+
     public String getFoodName(){
         return foodName;
     }
