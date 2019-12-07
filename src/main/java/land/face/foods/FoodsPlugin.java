@@ -10,6 +10,7 @@ import java.util.*;
 
 import land.face.foods.listener.FoodCommands;
 import land.face.foods.listener.FoodListener;
+import land.face.foods.objects.NutrientType;
 import land.face.foods.tasks.FoodTask;
 import land.face.foods.objects.HealthStatus;
 import land.face.foods.objects.RPGFoods;
@@ -17,9 +18,12 @@ import land.face.strife.StrifePlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+
+import static land.face.foods.objects.NutrientType.*;
 
 public class FoodsPlugin extends FacePlugin {
 
@@ -33,15 +37,24 @@ public class FoodsPlugin extends FacePlugin {
   public Map<UUID, HealthStatus> healthStatus = new HashMap<UUID, HealthStatus>();
   //rpg foods map
   public Map<String, RPGFoods> rpgFoods = new HashMap<String, RPGFoods>();
+  //global food cooldown
+  public Map<UUID, Long> globalFoodCoolDown = new HashMap<UUID, Long>();
 
   //tasks
   FoodTask foodTask = new FoodTask(this);
 
   FileConfiguration config = this.getConfig();
 
+  public final String proteinString = "protein";
+  public final String dairyString = "dairy";
+  public final String carbohydrateString = "carbohydrates";
+  public final String vegetableString = "vegetables";
+
   //loading config data
   public int maxHealth = 0;
   public int minHealth = 0;
+  public int consumptionCoolDown = 0;
+  public int nutrientDecreaseRate = 0;
 
   public void createRPGFoodFile(){
     File rpgFoodFile = new File(getDataFolder(), "RPGFoods.yml");
@@ -102,16 +115,17 @@ public class FoodsPlugin extends FacePlugin {
       FileConfiguration playerConfig = YamlConfiguration.loadConfiguration(fileName);
 
       playerConfig.set("healthyBoi", player.getValue().getHealthyBoi());
-      playerConfig.set("protein", player.getValue().getProtein());
-      playerConfig.set("dairy", player.getValue().getDairy());
-      playerConfig.set("carbohydrates", player.getValue().getCarbohydrates());
-      playerConfig.set("vegetables", player.getValue().getVegetables());
+      playerConfig.set(proteinString, player.getValue().getProtein());
+      playerConfig.set(dairyString, player.getValue().getDairy());
+      playerConfig.set(carbohydrateString, player.getValue().getCarbohydrates());
+      playerConfig.set(vegetableString, player.getValue().getVegetables());
       playerConfig.set("healthScore", player.getValue().getHealthScore());
       try {
         playerConfig.save(fileName);
       } catch (IOException e) {
         e.printStackTrace();
-      }    }
+      }
+    }
   }
 
   @Override
@@ -140,11 +154,16 @@ public class FoodsPlugin extends FacePlugin {
 
     config.addDefault("maxHealth", 0);
     config.addDefault("minHealth", 0);
+    config.addDefault("consumptionCoolDown", 0);
+    config.addDefault("nutrientDecreaseRate", 0);
 
     saveConfig();
 
     maxHealth = config.getInt("maxHealth");
     minHealth = config.getInt("minHealth");
+    consumptionCoolDown = config.getInt("consumptionCoolDown");
+    nutrientDecreaseRate = config.getInt("nutrientDecreaseRate");
+
 
     //events
     getServer().getPluginManager().registerEvents(new FoodListener(this), this);
@@ -155,6 +174,17 @@ public class FoodsPlugin extends FacePlugin {
     //create rpg food file
     createRPGFoodFile();
     loadFoodObjects();
+
+    //load online players incase of a reload
+    for (Player player : Bukkit.getOnlinePlayers()){
+      File fileName = new File(getDataFolder() + "/data", player.getUniqueId().toString() + ".yml");
+      if (!fileName.exists()) {
+        createPlayerFile(player.getUniqueId());
+        return;
+      }
+      //plugin.getServer().getLogger().info("Filename : " + fileName.getName() + "player: " + player.getName());
+      loadPlayerFile(fileName, player.getUniqueId());
+    }
 
     //foodtask
     foodTask.runTaskTimer(this,
@@ -191,10 +221,10 @@ public class FoodsPlugin extends FacePlugin {
     HealthStatus HS = new HealthStatus();
 
     HS.setUUID(uuid);
-    HS.setProtein(playerConfig2.getInt("protein"));
-    HS.setCarbohydrates(playerConfig2.getInt("carbohydrates"));
-    HS.setDairy(playerConfig2.getInt("dairy"));
-    HS.setVegetables(playerConfig2.getInt("vegetables"));
+    HS.setProtein(playerConfig2.getInt(proteinString));
+    HS.setCarbohydrates(playerConfig2.getInt(carbohydrateString));
+    HS.setDairy(playerConfig2.getInt(dairyString));
+    HS.setVegetables(playerConfig2.getInt(vegetableString));
     HS.setHealthScore(playerConfig2.getInt("healthScore"));
     HS.setHealthyBoi(playerConfig2.getInt("healthyBoi"));
 
@@ -230,6 +260,7 @@ public class FoodsPlugin extends FacePlugin {
         }
 
         for (String nutrients : foodConfig.getConfigurationSection(mainKey + "." + key + ".nutrients").getKeys(false)){
+          //getServer().getLogger().info(nutrients);
           food.setNutrients(nutrients, foodConfig.getInt(mainKey + "." + key + ".nutrients" + "." + nutrients));
         }
 
@@ -239,15 +270,15 @@ public class FoodsPlugin extends FacePlugin {
           PotionEffectType potionEffectType = PotionEffectType.getByName(potions);
 
           PotionEffect potion = new PotionEffect(potionEffectType,
-                  foodConfig.getInt(mainKey + "." + key +".potion-effects." + potions +".intensity"),
-                  foodConfig.getInt(mainKey + "." + key +".potion-effects." + potions +".duration"));
+                  foodConfig.getInt(mainKey + "." + key +".potion-effects." + potions +".duration"),
+                  foodConfig.getInt(mainKey + "." + key +".potion-effects." + potions +".intensity"));
           food.setPotionEffects(potion);
         }
 
 
 
         rpgFoods.put(food.getFoodName(), food);
-        //getServer().getLogger().info(food.getFoodName() + food.getNutrients() + food.getPotionEffects() +"");
+        //getServer().getLogger().info(food.getFoodName());
 
       }
 
@@ -255,6 +286,75 @@ public class FoodsPlugin extends FacePlugin {
 
 
 
+  }
+
+  public boolean checkPlayerCoolDown(UUID uuid){
+
+    if (globalFoodCoolDown.containsKey(uuid)){
+
+      if (globalFoodCoolDown.get(uuid) <= System.currentTimeMillis()){
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return true;
+    }
+  }
+
+  public void consumeFood(UUID uuid, RPGFoods rpgFoods){
+    //apply food's stats and buffs to the player
+    Player player = Bukkit.getPlayer(uuid);
+    //player.sendMessage("You ate food: " + rpgFoods.getFoodName());
+
+    //nutrients
+    for (Map.Entry<String, Integer> nutrients : rpgFoods.getNutrients().entrySet()){
+      //getServer().getLogger().info(nutrients.getKey() + " " + nutrients.getValue() );
+      switch(nutrients.getKey()){
+        case proteinString:
+          healthStatus.get(uuid).setProtein(nutrients.getValue());
+          break;
+        case dairyString:
+          healthStatus.get(uuid).setDairy(nutrients.getValue());
+          break;
+        case carbohydrateString:
+          healthStatus.get(uuid).setCarbohydrates(nutrients.getValue());
+          break;
+        case vegetableString:
+          healthStatus.get(uuid).setVegetables(nutrients.getValue());
+          break;
+      }
+
+
+      }
+
+    //potion effects
+    for (PotionEffect potions : rpgFoods.getPotionEffects()){
+      player.addPotionEffect(potions);
+      //getServer().getLogger().info(potions.toString());
+    }
+
+    //strife buffs
+    for (String buff : rpgFoods.getStrifeBuffs()){
+
+    }
+
+    //health restored
+    double maxPlayerHealth = player.getMaxHealth();
+
+    if (player.getHealth() + rpgFoods.getHealthRestored() >= maxPlayerHealth){
+      player.setHealth(player.getMaxHealth());
+    } else {
+      player.setHealth(player.getHealth() + rpgFoods.getHealthRestored());
+    }
+
+    //food restored
+    int maxPlayerFood = 20;
+    if (player.getFoodLevel() + rpgFoods.getFoodRestored() > maxPlayerFood){
+      player.setFoodLevel(20);
+    } else {
+      player.setFoodLevel(player.getFoodLevel() + rpgFoods.getFoodRestored());
+    }
   }
 
 }

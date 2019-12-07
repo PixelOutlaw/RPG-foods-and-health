@@ -19,13 +19,21 @@
 package land.face.foods.listener;
 
 import land.face.foods.FoodsPlugin;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.io.File;
+
+import static org.bukkit.Bukkit.getServer;
 
 public class FoodListener implements Listener {
 
@@ -36,8 +44,31 @@ public class FoodListener implements Listener {
   }
 
   @EventHandler
-  public void onEntityDeathEvent(FoodLevelChangeEvent event) {
-    // ????
+  public void onInteractEvent(PlayerInteractEvent event) {
+    //when the player interacts
+    Player player = event.getPlayer();
+
+    if (player.getItemInHand().getType() != Material.AIR){
+      //Material heldMaterial = player.getItemInHand().getType();
+
+      ItemStack heldItem = player.getItemInHand();
+      ItemMeta heldItemMeta = heldItem.getItemMeta();
+      String heldItemName = heldItemMeta.getDisplayName();
+      heldItemName = ChatColor.stripColor(heldItemName);
+      //plugin.getServer().getLogger().info("Held Item: " + heldItemName);
+
+      if (plugin.rpgFoods.containsKey(heldItemName) && plugin.checkPlayerCoolDown(player.getUniqueId())){
+        //reset the player's cooldown
+        plugin.globalFoodCoolDown.put(player.getUniqueId(), System.currentTimeMillis() + plugin.consumptionCoolDown);
+        //player consumes food
+        event.setCancelled(true);
+        heldItem.setAmount(heldItem.getAmount() - 1);
+        plugin.consumeFood(player.getUniqueId(), plugin.rpgFoods.get(heldItemName));
+
+        //plugin.getServer().getLogger().info("Cooldown: " + plugin.globalFoodCoolDown.get(player.getUniqueId()));
+
+      }
+    }
   }
 
   @EventHandler

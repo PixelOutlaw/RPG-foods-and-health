@@ -2,6 +2,7 @@ package land.face.foods.tasks;
 
 import land.face.foods.FoodsPlugin;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -20,7 +21,19 @@ public class FoodTask extends BukkitRunnable {
         //every 30 seconds, get online player's foods scores and give them a counter.
         for (Player player : Bukkit.getServer().getOnlinePlayers()) {
             plugin.getServer().getLogger().info("Food Task");
+            if (player.getGameMode() != GameMode.SURVIVAL){
+                return;
+            }
             UUID uuid = player.getUniqueId();
+
+            //reduce player's nutrient stats
+
+            plugin.healthStatus.get(uuid).setProtein(plugin.nutrientDecreaseRate);
+            plugin.healthStatus.get(uuid).setCarbohydrates(plugin.nutrientDecreaseRate);
+            plugin.healthStatus.get(uuid).setDairy(plugin.nutrientDecreaseRate);
+            plugin.healthStatus.get(uuid).setVegetables(plugin.nutrientDecreaseRate);
+
+            //evaluate players nutrient stats
 
             int healthyStats = 0;
 

@@ -57,6 +57,9 @@ public class FoodCommands implements CommandExecutor {
                 } else {
                     player.sendMessage(ChatColor.RED + "Correct usage /RPGFood Check <Player>");
                 }
+            } else if (args[0].equalsIgnoreCase("reload")){
+                plugin.disable();
+                plugin.enable();
             }
 
         }
