@@ -23,8 +23,6 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import static land.face.foods.objects.NutrientType.*;
-
 public class FoodsPlugin extends FacePlugin {
 
   private MasterConfiguration settings;
@@ -259,9 +257,16 @@ public class FoodsPlugin extends FacePlugin {
           food.setStrifeBuffs(strifeBuffs);
         }
 
-        for (String nutrients : foodConfig.getConfigurationSection(mainKey + "." + key + ".nutrients").getKeys(false)){
+        for (String nutrient : foodConfig.getConfigurationSection(mainKey + "." + key + ".nutrients").getKeys(false)){
           //getServer().getLogger().info(nutrients);
-          food.setNutrients(nutrients, foodConfig.getInt(mainKey + "." + key + ".nutrients" + "." + nutrients));
+          NutrientType type;
+          try {
+            type = NutrientType.valueOf(nutrient);
+          } catch (Exception e) {
+            getServer().getLogger().warning("Failed to load unknown nutrient: " + nutrient);
+            continue;
+          }
+          food.getNutrients().put(type, foodConfig.getInt(mainKey + "." + key + ".nutrients" + "." + nutrient));
         }
 
         for (String potions : foodConfig.getConfigurationSection(mainKey + "." + key + ".potion-effects").getKeys(false)){
@@ -308,25 +313,23 @@ public class FoodsPlugin extends FacePlugin {
     //player.sendMessage("You ate food: " + rpgFoods.getFoodName());
 
     //nutrients
-    for (Map.Entry<String, Integer> nutrients : rpgFoods.getNutrients().entrySet()){
+    for (Map.Entry<NutrientType, Integer> nutrients : rpgFoods.getNutrients().entrySet()){
       //getServer().getLogger().info(nutrients.getKey() + " " + nutrients.getValue() );
       switch(nutrients.getKey()){
-        case proteinString:
+        case PROTEIN:
           healthStatus.get(uuid).setProtein(nutrients.getValue());
           break;
-        case dairyString:
+        case DAIRY:
           healthStatus.get(uuid).setDairy(nutrients.getValue());
           break;
-        case carbohydrateString:
+        case CARBOHYDRATE:
           healthStatus.get(uuid).setCarbohydrates(nutrients.getValue());
           break;
-        case vegetableString:
+        case VEGETABLE:
           healthStatus.get(uuid).setVegetables(nutrients.getValue());
           break;
       }
-
-
-      }
+    }
 
     //potion effects
     for (PotionEffect potions : rpgFoods.getPotionEffects()){

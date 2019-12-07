@@ -7,7 +7,7 @@ public enum NutrientType {
     CARBOHYDRATE("carbohydrates"),
     VEGETABLE("vegetables");
 
-    public final NutrientType[] type = NutrientType.values();
+    public final NutrientType[] types = NutrientType.values();
 
     private final String nutrientName;
 

@@ -15,12 +15,12 @@ public class RPGFoods {
 
     private String foodName;
     private Material foodItem;
-    private Map<String, Integer> nutrients = new HashMap<String, Integer>();
+    private Map<NutrientType, Integer> nutrients = new HashMap<>();
     //private List<String> nutrients = new ArrayList<String>();
     private int foodRestored;
     private int healthRestored;
-    private List<String> strifeBuffs = new ArrayList<String>();
-    private List<PotionEffect> potionEffects = new ArrayList<PotionEffect>();
+    private List<String> strifeBuffs = new ArrayList<>();
+    private List<PotionEffect> potionEffects = new ArrayList<>();
     private int customData;
 
     public String getFoodName(){
@@ -39,12 +39,8 @@ public class RPGFoods {
         foodItem = Material.getMaterial(itemName);
     }
 
-    public Map<String, Integer> getNutrients(){
+    public Map<NutrientType, Integer> getNutrients(){
         return nutrients;
-    }
-
-    public void setNutrients(String nutrientName, int amount){
-        nutrients.put(nutrientName, amount);
     }
 
     public int getFoodRestored(){
