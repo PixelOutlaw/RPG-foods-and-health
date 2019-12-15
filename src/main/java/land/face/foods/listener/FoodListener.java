@@ -45,6 +45,7 @@ public class FoodListener implements Listener {
 
   @EventHandler
   public void onInteractEvent(PlayerInteractEvent event) {
+
     //when the player interacts
     Player player = event.getPlayer();
 
@@ -57,16 +58,32 @@ public class FoodListener implements Listener {
       heldItemName = ChatColor.stripColor(heldItemName);
       //plugin.getServer().getLogger().info("Held Item: " + heldItemName);
 
+      //check if player is on a food cooldown
       if (plugin.rpgFoods.containsKey(heldItemName) && plugin.checkPlayerCoolDown(player.getUniqueId())){
-        //reset the player's cooldown
-        plugin.globalFoodCoolDown.put(player.getUniqueId(), System.currentTimeMillis() + plugin.consumptionCoolDown);
-        //player consumes food
-        event.setCancelled(true);
-        heldItem.setAmount(heldItem.getAmount() - 1);
-        plugin.consumeFood(player.getUniqueId(), plugin.rpgFoods.get(heldItemName));
+        if (!heldItemMeta.hasCustomModelData()){
+          return;
+        }
+        int customDataValue = plugin.rpgFoods.get(heldItemName).getCustomData();
 
-        //plugin.getServer().getLogger().info("Cooldown: " + plugin.globalFoodCoolDown.get(player.getUniqueId()));
+        //separate the characters in the custom model data
 
+        if (customDataValue == heldItemMeta.getCustomModelData()){
+          //reset the player's cooldown
+          plugin.globalFoodCoolDown.put(player.getUniqueId(), System.currentTimeMillis() + plugin.consumptionCoolDown);
+          //player consumes food
+          event.setCancelled(true);
+          plugin.consumeFood(player.getUniqueId(), plugin.rpgFoods.get(heldItemName), heldItem);
+          heldItem.setAmount(heldItem.getAmount() - 1);
+
+          //plugin.getServer().getLogger().info("Cooldown: " + plugin.globalFoodCoolDown.get(player.getUniqueId()));
+        }
+      } else if (plugin.rpgFoods.containsKey(heldItemName)){
+        if (!heldItemMeta.hasCustomModelData()){
+          return;
+        }
+        if (plugin.rpgFoods.get(heldItemName).getCustomData() == heldItemMeta.getCustomModelData()){
+          event.setCancelled(true);
+        }
       }
     }
   }

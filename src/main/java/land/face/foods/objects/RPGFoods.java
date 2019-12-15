@@ -16,7 +16,6 @@ public class RPGFoods {
     private String foodName;
     private Material foodItem;
     private Map<NutrientType, Integer> nutrients = new HashMap<>();
-    //private List<String> nutrients = new ArrayList<String>();
     private int foodRestored;
     private int healthRestored;
     private List<String> strifeBuffs = new ArrayList<>();
@@ -84,6 +83,8 @@ public class RPGFoods {
     public void setCustomData(int data){
         customData = data;
     }
+
+
 
 
 }

@@ -31,7 +31,7 @@ public class FoodTask extends BukkitRunnable {
             plugin.healthStatus.get(uuid).setProtein(plugin.nutrientDecreaseRate);
             plugin.healthStatus.get(uuid).setCarbohydrates(plugin.nutrientDecreaseRate);
             plugin.healthStatus.get(uuid).setDairy(plugin.nutrientDecreaseRate);
-            plugin.healthStatus.get(uuid).setVegetables(plugin.nutrientDecreaseRate);
+            plugin.healthStatus.get(uuid).setProduce(plugin.nutrientDecreaseRate);
 
             //evaluate players nutrient stats
 
@@ -59,7 +59,7 @@ public class FoodTask extends BukkitRunnable {
             }
 
             //vegetables
-            if (plugin.healthStatus.get(uuid).getVegetables() < 20){
+            if (plugin.healthStatus.get(uuid).getProduce() < 20){
                 plugin.healthStatus.get(uuid).setHealthyBoi(-1);
             } else {
                 healthyStats++;

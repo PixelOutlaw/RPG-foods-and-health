@@ -1,6 +1,8 @@
 package land.face.foods;
 
 import com.tealcube.minecraft.bukkit.facecore.plugin.FacePlugin;
+import com.tealcube.minecraft.bukkit.shade.apache.commons.lang3.math.NumberUtils;
+import com.tealcube.minecraft.bukkit.shade.google.common.base.CharMatcher;
 import io.pixeloutlaw.minecraft.spigot.config.MasterConfiguration;
 import io.pixeloutlaw.minecraft.spigot.config.VersionedConfiguration;
 import io.pixeloutlaw.minecraft.spigot.config.VersionedSmartYamlConfiguration;
@@ -8,18 +10,24 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+import io.pixeloutlaw.minecraft.spigot.hilt.ItemStackExtensionsKt;
 import land.face.foods.listener.FoodCommands;
 import land.face.foods.listener.FoodListener;
+import land.face.foods.managers.Crafting;
 import land.face.foods.objects.NutrientType;
 import land.face.foods.tasks.FoodTask;
 import land.face.foods.objects.HealthStatus;
 import land.face.foods.objects.RPGFoods;
 import land.face.strife.StrifePlugin;
+import land.face.strife.data.buff.LoadedBuff;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -46,7 +54,7 @@ public class FoodsPlugin extends FacePlugin {
   public final String proteinString = "protein";
   public final String dairyString = "dairy";
   public final String carbohydrateString = "carbohydrates";
-  public final String vegetableString = "vegetables";
+  public final String produceString = "produce";
 
   //loading config data
   public int maxHealth = 0;
@@ -89,7 +97,7 @@ public class FoodsPlugin extends FacePlugin {
       playerConfig.set("protein", 0);
       playerConfig.set("dairy", 0);
       playerConfig.set("carbohydrates", 0);
-      playerConfig.set("vegetables", 0);
+      playerConfig.set("produce", 0);
       playerConfig.set("healthScore", 0);
 
       try {
@@ -116,7 +124,7 @@ public class FoodsPlugin extends FacePlugin {
       playerConfig.set(proteinString, player.getValue().getProtein());
       playerConfig.set(dairyString, player.getValue().getDairy());
       playerConfig.set(carbohydrateString, player.getValue().getCarbohydrates());
-      playerConfig.set(vegetableString, player.getValue().getVegetables());
+      playerConfig.set(produceString, player.getValue().getProduce());
       playerConfig.set("healthScore", player.getValue().getHealthScore());
       try {
         playerConfig.save(fileName);
@@ -165,6 +173,7 @@ public class FoodsPlugin extends FacePlugin {
 
     //events
     getServer().getPluginManager().registerEvents(new FoodListener(this), this);
+    getServer().getPluginManager().registerEvents(new Crafting(this), this);
 
     //commands
     this.getCommand("RPGFood").setExecutor(new FoodCommands(this));
@@ -222,7 +231,7 @@ public class FoodsPlugin extends FacePlugin {
     HS.setProtein(playerConfig2.getInt(proteinString));
     HS.setCarbohydrates(playerConfig2.getInt(carbohydrateString));
     HS.setDairy(playerConfig2.getInt(dairyString));
-    HS.setVegetables(playerConfig2.getInt(vegetableString));
+    HS.setProduce(playerConfig2.getInt(produceString));
     HS.setHealthScore(playerConfig2.getInt("healthScore"));
     HS.setHealthyBoi(playerConfig2.getInt("healthyBoi"));
 
@@ -254,6 +263,9 @@ public class FoodsPlugin extends FacePlugin {
         food.setHealthRestored(foodConfig.getInt(mainKey + "." + key +".health-restored"));
 
         for (String strifeBuffs : foodConfig.getStringList(mainKey + "." + key + ".buffs-applied")){
+          if (strifeBuffs == null){
+            return;
+          }
           food.setStrifeBuffs(strifeBuffs);
         }
 
@@ -261,7 +273,7 @@ public class FoodsPlugin extends FacePlugin {
           //getServer().getLogger().info(nutrients);
           NutrientType type;
           try {
-            type = NutrientType.valueOf(nutrient);
+            type = NutrientType.valueOf(nutrient.toUpperCase());
           } catch (Exception e) {
             getServer().getLogger().warning("Failed to load unknown nutrient: " + nutrient);
             continue;
@@ -269,16 +281,22 @@ public class FoodsPlugin extends FacePlugin {
           food.getNutrients().put(type, foodConfig.getInt(mainKey + "." + key + ".nutrients" + "." + nutrient));
         }
 
-        for (String potions : foodConfig.getConfigurationSection(mainKey + "." + key + ".potion-effects").getKeys(false)){
+        if (foodConfig.getConfigurationSection(mainKey + "." + key + ".potion-effects") != null){
 
-          //String potionType = foodConfig.getString(mainKey + "." + key + ".potion-effects." + potions);
-          PotionEffectType potionEffectType = PotionEffectType.getByName(potions);
+          for (String potions: foodConfig.getConfigurationSection(mainKey + "." + key + ".potion-effects").getKeys(false)){
 
-          PotionEffect potion = new PotionEffect(potionEffectType,
-                  foodConfig.getInt(mainKey + "." + key +".potion-effects." + potions +".duration"),
-                  foodConfig.getInt(mainKey + "." + key +".potion-effects." + potions +".intensity"));
-          food.setPotionEffects(potion);
+
+            //String potionType = foodConfig.getString(mainKey + "." + key + ".potion-effects." + potions);
+            PotionEffectType potionEffectType = PotionEffectType.getByName(potions);
+
+            PotionEffect potion = new PotionEffect(potionEffectType,
+                    foodConfig.getInt(mainKey + "." + key +".potion-effects." + potions +".duration"),
+                    foodConfig.getInt(mainKey + "." + key +".potion-effects." + potions +".intensity"));
+            food.setPotionEffects(potion);
+          }
+
         }
+
 
 
 
@@ -307,14 +325,18 @@ public class FoodsPlugin extends FacePlugin {
     }
   }
 
-  public void consumeFood(UUID uuid, RPGFoods rpgFoods){
+  public void consumeFood(UUID uuid, RPGFoods rpgFoods, ItemStack itemStack){
+
+    //CHANGE TO READ NUTRIENTS FROM LORE
+    Map<NutrientType, Integer> itemsNutrients = getItemStats(itemStack);
+    getServer().getLogger().info(itemsNutrients.toString());
     //apply food's stats and buffs to the player
     Player player = Bukkit.getPlayer(uuid);
-    //player.sendMessage("You ate food: " + rpgFoods.getFoodName());
+
 
     //nutrients
-    for (Map.Entry<NutrientType, Integer> nutrients : rpgFoods.getNutrients().entrySet()){
-      //getServer().getLogger().info(nutrients.getKey() + " " + nutrients.getValue() );
+    for (Map.Entry<NutrientType, Integer> nutrients : itemsNutrients.entrySet()){
+      getServer().getLogger().info(nutrients.getKey() + " " + nutrients.getValue() );
       switch(nutrients.getKey()){
         case PROTEIN:
           healthStatus.get(uuid).setProtein(nutrients.getValue());
@@ -325,8 +347,8 @@ public class FoodsPlugin extends FacePlugin {
         case CARBOHYDRATE:
           healthStatus.get(uuid).setCarbohydrates(nutrients.getValue());
           break;
-        case VEGETABLE:
-          healthStatus.get(uuid).setVegetables(nutrients.getValue());
+        case PRODUCE:
+          healthStatus.get(uuid).setProduce(nutrients.getValue());
           break;
       }
     }
@@ -359,5 +381,61 @@ public class FoodsPlugin extends FacePlugin {
       player.setFoodLevel(player.getFoodLevel() + rpgFoods.getFoodRestored());
     }
   }
+
+  public static boolean isInt(String s) {
+    try {
+      Integer.parseInt(s);
+    } catch (NumberFormatException nfe) {
+      return false;
+    }
+    return true;
+  }
+
+  //STAT READING
+  public Map<NutrientType, Integer> getItemStats(ItemStack stack) {
+    return getItemStats(stack, 1);
+  }
+
+  public Map<NutrientType, Integer> getItemStats(ItemStack stack, Integer multiplier) {
+    if (stack == null || stack.getType() == Material.AIR) {
+      return new HashMap<>();
+    }
+    Map<NutrientType, Integer> itemStats = new HashMap<>();
+
+    List<String> lore = ItemStackExtensionsKt.getLore(stack);
+    if (lore.isEmpty()) {
+      return itemStats;
+    }
+    List<String> strippedLore = stripColor(lore);
+
+    for (String s : strippedLore) {
+      Integer amount = 0;
+      String retained = CharMatcher.forPredicate(Character::isLetter).or(CharMatcher.is(' '))
+              .retainFrom(s).trim();
+      NutrientType attribute = NutrientType.fromName(retained);
+      if (attribute == null) {
+        continue;
+      }
+      amount += NumberUtils.toInt(CharMatcher.digit().or(CharMatcher.is('-')).retainFrom(s));
+      if (amount == 0) {
+        continue;
+      }
+
+      if (itemStats.containsKey(attribute)) {
+        amount += itemStats.get(attribute);
+      }
+      itemStats.put(attribute, amount);
+    }
+    return itemStats;
+  }
+
+  private List<String> stripColor(List<String> strings) {
+    List<String> stripped = new ArrayList<>();
+    for (String s : strings) {
+      stripped.add(ChatColor.stripColor(s));
+    }
+    return stripped;
+  }
+
 
 }

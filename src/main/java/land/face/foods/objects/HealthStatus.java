@@ -6,10 +6,12 @@ import java.util.UUID;
 
 public class HealthStatus {
 
+    private int maxNutrient = 100;
+    private int minNutrient = 0;
     private int protein;
     private int carbohydrates;
     private int dairy;
-    private int vegetables;
+    private int produce;
     private int healthScore;
     private int healthyBoi;
 
@@ -24,7 +26,13 @@ public class HealthStatus {
     }
 
     public void setProtein(int amount){
-        protein += amount;
+        if (protein + amount >= maxNutrient){
+            protein = maxNutrient;
+        } else if (protein + amount <= minNutrient){
+            protein = minNutrient;
+        } else {
+            protein += amount;
+        }
     }
 
     public int getCarbohydrates(){
@@ -32,7 +40,13 @@ public class HealthStatus {
     }
 
     public void setCarbohydrates(int amount){
-        carbohydrates += amount;
+        if (carbohydrates + amount >= maxNutrient){
+            carbohydrates = maxNutrient;
+        } else if (carbohydrates + amount <= minNutrient){
+            carbohydrates = minNutrient;
+        } else {
+            carbohydrates += amount;
+        }
     }
 
     public int getDairy(){
@@ -40,15 +54,27 @@ public class HealthStatus {
     }
 
     public void setDairy(int amount){
-        dairy += amount;
+        if (dairy + amount >= maxNutrient){
+            dairy = maxNutrient;
+        } else if (dairy + amount <= minNutrient){
+            dairy = minNutrient;
+        } else {
+            dairy += amount;
+        }
     }
 
-    public int getVegetables(){
-        return vegetables;
+    public int getProduce(){
+        return produce;
     }
 
-    public void setVegetables(int amount){
-        vegetables += amount;
+    public void setProduce(int amount){
+        if (produce + amount >= maxNutrient){
+            produce = maxNutrient;
+        } else if (produce + amount <= minNutrient){
+            produce = minNutrient;
+        } else {
+            produce += amount;
+        }
     }
 
     public int getHealthScore(){
@@ -67,5 +93,38 @@ public class HealthStatus {
         healthyBoi += amount;
     }
 
+    //HARD SETTERS
 
+    public void hardSetProtein(int amount){
+        protein = amount;
+    }
+
+    public void hardSetDairy(int amount){
+        dairy = amount;
+    }
+
+    public void hardSetCarbohydrates(int amount){
+        carbohydrates = amount;
+    }
+
+    public void hardSetProduce(int amount){
+        produce = amount;
+    }
+
+    public void hardSetHealthyBoi(int amount){
+        healthyBoi = amount;
+    }
+
+    public void hardSetHealthScore(int amount){
+        healthScore = amount;
+    }
+
+    public void resetNutrients(){
+        protein = 0;
+        dairy = 0;
+        carbohydrates = 0;
+        produce = 0;
+        healthScore = 0;
+        healthyBoi = 0;
+    }
 }
