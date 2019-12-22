@@ -122,6 +122,16 @@ public class FoodCommands implements CommandExecutor {
                 } else {
                     player.sendMessage(ChatColor.RED + "Incorrect Usage");
                 }
+            } else if (args[0].equalsIgnoreCase("statcheck")){
+
+                if (player.getItemInHand() != null){
+                    if (player.getItemInHand().getItemMeta().hasCustomModelData() == true) {
+                        player.sendMessage("" +player.getItemInHand().getItemMeta().getCustomModelData());
+                    } else {
+                        player.sendMessage("no custom model data :(");
+                    }
+                }
+
             }
 
         }
