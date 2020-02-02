@@ -11,15 +11,15 @@ import java.io.IOException;
 import java.util.*;
 
 import io.pixeloutlaw.minecraft.spigot.hilt.ItemStackExtensionsKt;
-import land.face.foods.listener.FoodCommands;
+import land.face.foods.commands.FoodCommands;
 import land.face.foods.listener.FoodListener;
-import land.face.foods.managers.Crafting;
+import land.face.foods.listener.CraftingListener;
+import land.face.foods.managers.FoodsManager;
 import land.face.foods.objects.NutrientType;
 import land.face.foods.tasks.FoodTask;
 import land.face.foods.objects.HealthStatus;
 import land.face.foods.objects.RPGFoods;
 import land.face.strife.StrifePlugin;
-import land.face.strife.data.buff.LoadedBuff;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -29,7 +29,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 
 public class FoodsPlugin extends FacePlugin {
 
@@ -39,10 +38,10 @@ public class FoodsPlugin extends FacePlugin {
 
   private StrifePlugin strifePlugin;
 
+  private FoodsManager foodsManager;
+
   //nutrient maps tracker
   public Map<UUID, HealthStatus> healthStatus = new HashMap<UUID, HealthStatus>();
-  //rpg foods map
-  public Map<String, RPGFoods> rpgFoods = new HashMap<String, RPGFoods>();
   //global food cooldown
   public Map<UUID, Long> globalFoodCoolDown = new HashMap<UUID, Long>();
 
@@ -170,17 +169,18 @@ public class FoodsPlugin extends FacePlugin {
     consumptionCoolDown = config.getInt("consumptionCoolDown");
     nutrientDecreaseRate = config.getInt("nutrientDecreaseRate");
 
+    foodsManager = new FoodsManager(this);
 
     //events
     getServer().getPluginManager().registerEvents(new FoodListener(this), this);
-    getServer().getPluginManager().registerEvents(new Crafting(this), this);
+    getServer().getPluginManager().registerEvents(new CraftingListener(this), this);
 
     //commands
     this.getCommand("RPGFood").setExecutor(new FoodCommands(this));
 
     //create rpg food file
     createRPGFoodFile();
-    loadFoodObjects();
+    foodsManager.loadFoodObjects(new File(getDataFolder(), "RPGFoods.yml"));
 
     //load online players incase of a reload
     for (Player player : Bukkit.getOnlinePlayers()){
@@ -219,6 +219,9 @@ public class FoodsPlugin extends FacePlugin {
         getResource(name), VersionedConfiguration.VersionUpdateType.BACKUP_AND_UPDATE);
   }
 
+  public FoodsManager getFoodsManager() {
+    return foodsManager;
+  }
 
   public void loadPlayerFile(File file, UUID uuid){
     //create a new instance of healthstatus and add it to the health status map uuid,healthstatus
@@ -241,74 +244,6 @@ public class FoodsPlugin extends FacePlugin {
   public int getHealthMultiplier(UUID uuid){
     int healthMultiplier = minHealth + (maxHealth - minHealth) * (healthStatus.get(uuid).getHealthScore() / 100);
     return healthMultiplier;
-  }
-
-  public void loadFoodObjects(){
-    //load in food objects :(
-
-    File rpgFoodFile = new File(getDataFolder(), "RPGFoods.yml");
-
-    FileConfiguration foodConfig = YamlConfiguration.loadConfiguration(rpgFoodFile);
-
-    for (String mainKey : foodConfig.getKeys(false)){
-
-      for (String key : foodConfig.getConfigurationSection(mainKey).getKeys(false)){
-
-        RPGFoods food = new RPGFoods();
-
-        food.setFoodName(foodConfig.getString(mainKey + "." + key +".display-name"));
-        food.setFoodItem(foodConfig.getString(mainKey));
-        food.setCustomData(foodConfig.getInt(mainKey + "." + key +".custom-data"));
-        food.setFoodRestored(foodConfig.getInt(mainKey + "." + key +".food-restored"));
-        food.setHealthRestored(foodConfig.getInt(mainKey + "." + key +".health-restored"));
-
-        for (String strifeBuffs : foodConfig.getStringList(mainKey + "." + key + ".buffs-applied")){
-          if (strifeBuffs == null){
-            return;
-          }
-          food.setStrifeBuffs(strifeBuffs);
-        }
-
-        for (String nutrient : foodConfig.getConfigurationSection(mainKey + "." + key + ".nutrients").getKeys(false)){
-          //getServer().getLogger().info(nutrients);
-          NutrientType type;
-          try {
-            type = NutrientType.valueOf(nutrient.toUpperCase());
-          } catch (Exception e) {
-            getServer().getLogger().warning("Failed to load unknown nutrient: " + nutrient);
-            continue;
-          }
-          food.getNutrients().put(type, foodConfig.getInt(mainKey + "." + key + ".nutrients" + "." + nutrient));
-        }
-
-        if (foodConfig.getConfigurationSection(mainKey + "." + key + ".potion-effects") != null){
-
-          for (String potions: foodConfig.getConfigurationSection(mainKey + "." + key + ".potion-effects").getKeys(false)){
-
-
-            //String potionType = foodConfig.getString(mainKey + "." + key + ".potion-effects." + potions);
-            PotionEffectType potionEffectType = PotionEffectType.getByName(potions);
-
-            PotionEffect potion = new PotionEffect(potionEffectType,
-                    foodConfig.getInt(mainKey + "." + key +".potion-effects." + potions +".duration"),
-                    foodConfig.getInt(mainKey + "." + key +".potion-effects." + potions +".intensity"));
-            food.setPotionEffects(potion);
-          }
-
-        }
-
-
-
-
-        rpgFoods.put(food.getFoodName(), food);
-        //getServer().getLogger().info(food.getFoodName());
-
-      }
-
-    }
-
-
-
   }
 
   public boolean checkPlayerCoolDown(UUID uuid){
