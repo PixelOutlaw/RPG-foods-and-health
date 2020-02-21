@@ -38,8 +38,10 @@ public class CraftingListener implements Listener {
 
     String iName = ChatColor.stripColor(craftedItem.getItemMeta().getDisplayName());
     //String craftedItemName = craftedItem.getItemMeta().getDisplayName();
+    Bukkit.getServer().getLogger()
+        .info("Crafted Display Name: " + craftedItem.getItemMeta().getDisplayName());
 
-    RPGFoods food = plugin.getFoodsManager().getFoods(iName);
+    RPGFoods food = plugin.getFoodsManager().getFoodFromDisplay(iName);
     if (food == null) {
       Bukkit.getServer().getLogger().info("Food not found dawg");
       return;

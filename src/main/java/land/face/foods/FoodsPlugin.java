@@ -150,8 +150,6 @@ public class FoodsPlugin extends FacePlugin {
 
     strifePlugin = StrifePlugin.getInstance();
 
-    Bukkit.getPluginManager().registerEvents(new FoodListener(this), this);
-
     Bukkit.getLogger().info("Successfully enabled HealthAndFoods-v" + getDescription().getVersion());
 
     //default config
@@ -172,8 +170,8 @@ public class FoodsPlugin extends FacePlugin {
     foodsManager = new FoodsManager(this);
 
     //events
-    getServer().getPluginManager().registerEvents(new FoodListener(this), this);
-    getServer().getPluginManager().registerEvents(new CraftingListener(this), this);
+    Bukkit.getPluginManager().registerEvents(new FoodListener(this), this);
+    Bukkit.getPluginManager().registerEvents(new CraftingListener(this), this);
 
     //commands
     this.getCommand("RPGFood").setExecutor(new FoodCommands(this));

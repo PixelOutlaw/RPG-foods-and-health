@@ -27,6 +27,15 @@ public class FoodsManager {
     return rpgFoods.get(foodName);
   }
 
+  public RPGFoods getFoodFromDisplay(String displayName) {
+    for (RPGFoods foods : rpgFoods.values()) {
+      if (displayName.equals(foods.getFoodName())) {
+        return foods;
+      }
+    }
+    return null;
+  }
+
   public void loadFoodObjects(File rpgFoodFile) {
     FileConfiguration foodConfig = YamlConfiguration.loadConfiguration(rpgFoodFile);
     for (String mainKey : foodConfig.getKeys(false)) {
