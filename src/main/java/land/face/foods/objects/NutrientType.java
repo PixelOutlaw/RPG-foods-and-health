@@ -5,36 +5,43 @@ import java.util.Map;
 
 public enum NutrientType {
 
-    PROTEIN("protein"),
-    DAIRY("dairy"),
-    CARBOHYDRATE("carbohydrates"),
-    PRODUCE("produce");
+  PROTEIN("protein", "Protein"),
+  DAIRY("dairy", "Dairy"),
+  CARBOHYDRATE("carbohydrates", "Carbs"),
+  PRODUCE("produce", "Produce");
 
-    private final String nutrientName;
+  private final String dataName;
+  private final String prettyName;
 
-    NutrientType(String nutrientName){
-        this.nutrientName = nutrientName;
+  NutrientType(String dataName, String prettyName) {
+    this.dataName = dataName;
+    this.prettyName = prettyName;
+  }
+
+  // Name used for save/load of values
+  public String getDataName() {
+    return dataName;
+  }
+
+    public String getPrettyName() {
+        return prettyName;
     }
 
-    public String getNutrientName(){
-        return nutrientName;
-    }
+  private static final Map<String, NutrientType> copyOfValues = buildStringToAttributeMap();
 
-    private static final Map<String, NutrientType> copyOfValues = buildStringToAttributeMap();
-
-    private static Map<String, NutrientType> buildStringToAttributeMap() {
-        Map<String, NutrientType> values = new HashMap<>();
-        for (NutrientType stat : NutrientType.values()) {
-            if (stat.getNutrientName() == null) {
-                continue;
-            }
-            values.put(stat.getNutrientName(), stat);
-        }
-        return values;
+  private static Map<String, NutrientType> buildStringToAttributeMap() {
+    Map<String, NutrientType> values = new HashMap<>();
+    for (NutrientType stat : NutrientType.values()) {
+      if (stat.getDataName() == null) {
+        continue;
+      }
+      values.put(stat.getDataName(), stat);
     }
+    return values;
+  }
 
-    public static NutrientType fromName(String name) {
-        return copyOfValues.getOrDefault(name, null);
-    }
+  public static NutrientType fromName(String name) {
+    return copyOfValues.getOrDefault(name, null);
+  }
 
 }

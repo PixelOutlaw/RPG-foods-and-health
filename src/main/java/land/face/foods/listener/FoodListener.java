@@ -19,16 +19,10 @@
 package land.face.foods.listener;
 
 import land.face.foods.FoodsPlugin;
-import land.face.foods.objects.RPGFoods;
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.io.File;
 
@@ -38,46 +32,6 @@ public class FoodListener implements Listener {
 
   public FoodListener(FoodsPlugin plugin) {
     this.plugin = plugin;
-  }
-
-  @EventHandler
-  public void onInteractEvent(PlayerInteractEvent event) {
-
-    Player player = event.getPlayer();
-
-    if (player.getItemInHand().getType() != Material.AIR) {
-      //Material heldMaterial = player.getItemInHand().getType();
-
-      ItemStack heldItem = player.getItemInHand();
-      ItemMeta heldItemMeta = heldItem.getItemMeta();
-      String heldItemName = heldItemMeta.getDisplayName();
-      heldItemName = ChatColor.stripColor(heldItemName);
-      //plugin.getServer().getLogger().info("Held Item: " + heldItemName);
-
-      //check if player is on a food cooldown
-      RPGFoods rpgFoods = plugin.getFoodsManager().getFoods(heldItemName);
-      if (rpgFoods != null) {
-        event.setCancelled(true);
-      }
-      if (rpgFoods != null && plugin.checkPlayerCoolDown(player.getUniqueId())) {
-        if (!heldItemMeta.hasCustomModelData()) {
-          return;
-        }
-        int customDataValue = rpgFoods.getCustomData();
-
-        //separate the characters in the custom model data
-
-        if (customDataValue == heldItemMeta.getCustomModelData()) {
-          //reset the player's cooldown
-          plugin.globalFoodCoolDown
-              .put(player.getUniqueId(), System.currentTimeMillis() + plugin.consumptionCoolDown);
-          //player consumes food
-          event.setCancelled(true);
-          plugin.consumeFood(player.getUniqueId(), rpgFoods, heldItem);
-          heldItem.setAmount(heldItem.getAmount() - 1);
-        }
-      }
-    }
   }
 
   @EventHandler
@@ -92,6 +46,6 @@ public class FoodListener implements Listener {
       return;
     }
     //plugin.getServer().getLogger().info("Filename : " + fileName.getName() + "player: " + player.getName());
-    plugin.loadPlayerFile(fileName, player.getUniqueId());
+    plugin.getFoodsManager().loadPlayerFile(fileName, player.getUniqueId());
   }
 }

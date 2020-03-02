@@ -55,12 +55,12 @@ public class FoodCommands implements CommandExecutor {
           if (Bukkit.getServer().getOnlinePlayers().contains(playerCheck)) {
             UUID playerUUID = playerCheck.getUniqueId();
             player.sendMessage(ChatColor.GREEN + playerCheck.getName() + "'s Nutritional Stats:"
-                + " Protein: " + plugin.healthStatus.get(playerUUID).getProtein()
-                + " Dairy: " + plugin.healthStatus.get(playerUUID).getDairy()
-                + " Carbohydrates: " + plugin.healthStatus.get(playerUUID).getCarbohydrates()
-                + " Produce: " + plugin.healthStatus.get(playerUUID).getProduce()
-                + " Health Score: " + plugin.healthStatus.get(playerUUID).getHealthScore()
-                + " HealthyBoi: " + plugin.healthStatus.get(playerUUID).getHealthyBoi());
+                + " Protein: " + plugin.getFoodsManager().getHealthStatus().get(playerUUID).getProtein()
+                + " Dairy: " + plugin.getFoodsManager().getHealthStatus().get(playerUUID).getDairy()
+                + " Carbohydrates: " + plugin.getFoodsManager().getHealthStatus().get(playerUUID).getCarbohydrates()
+                + " Produce: " + plugin.getFoodsManager().getHealthStatus().get(playerUUID).getProduce()
+                + " Health Score: " + plugin.getFoodsManager().getHealthStatus().get(playerUUID).getHealthScore()
+                + " HealthyBoi: " + plugin.getFoodsManager().getHealthStatus().get(playerUUID).getHealthyBoi());
           } else {
             player.sendMessage(ChatColor.RED + "Player is not online or doesn't exist!");
           }
@@ -86,26 +86,26 @@ public class FoodCommands implements CommandExecutor {
 
               switch (args[2].toLowerCase()) {
                 case "protein":
-                  plugin.healthStatus.get(playerUUID).hardSetProtein(amount);
+                  plugin.getFoodsManager().getHealthStatus().get(playerUUID).hardSetProtein(amount);
                   player.sendMessage(ChatColor.GREEN + "Set Nutrient!");
                   break;
                 case "dairy":
-                  plugin.healthStatus.get(playerUUID).hardSetDairy(amount);
+                  plugin.getFoodsManager().getHealthStatus().get(playerUUID).hardSetDairy(amount);
                   player.sendMessage(ChatColor.GREEN + "Set Nutrient!");
                   break;
                 case "carbohydrates":
-                  plugin.healthStatus.get(playerUUID).hardSetCarbohydrates(amount);
+                  plugin.getFoodsManager().getHealthStatus().get(playerUUID).hardSetCarbohydrates(amount);
                   player.sendMessage(ChatColor.GREEN + "Set Nutrient!");
                   break;
                 case "produce":
-                  plugin.healthStatus.get(playerUUID).hardSetProduce(amount);
+                  plugin.getFoodsManager().getHealthStatus().get(playerUUID).hardSetProduce(amount);
                   player.sendMessage(ChatColor.GREEN + "Set Nutrient!");
                   break;
                 case "healthyboi":
-                  plugin.healthStatus.get(playerUUID).hardSetHealthyBoi(amount);
+                  plugin.getFoodsManager().getHealthStatus().get(playerUUID).hardSetHealthyBoi(amount);
                   player.sendMessage(ChatColor.GREEN + "Set HealthyBoi!");
                 case "healthscore":
-                  plugin.healthStatus.get(playerUUID).hardSetHealthScore(amount);
+                  plugin.getFoodsManager().getHealthStatus().get(playerUUID).hardSetHealthScore(amount);
                   player.sendMessage(ChatColor.GREEN + "Set HealthScore!");
                   break;
               }
@@ -125,7 +125,7 @@ public class FoodCommands implements CommandExecutor {
       } else if (args[0].equalsIgnoreCase("reset")) {
         if (args[1] != null) {
           Player playerToReset = plugin.getServer().getPlayer(args[1]);
-          plugin.healthStatus.get(playerToReset.getUniqueId()).resetNutrients();
+          plugin.getFoodsManager().getHealthStatus().get(playerToReset.getUniqueId()).resetNutrients();
           player.sendMessage(ChatColor.GREEN + "Reset: " + playerToReset.getName());
         } else {
           player.sendMessage(ChatColor.RED + "Incorrect Usage");
