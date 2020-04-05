@@ -67,14 +67,16 @@ public class FoodsPlugin extends FacePlugin {
 
     saveConfig();
 
-    nutrientDecreaseRate = configYAML.getInt("nutrientDecreaseRate", 30);
+    //nutrientDecreaseRate = configYAML.getInt("nutrientDecreaseRate", 30);
 
-    foodsManager = new FoodsManager(this);
+    //foodsManager = new FoodsManager(this);
 
     //events
+    Bukkit.getPluginManager().registerEvents(new EatListener(this), this);
+
+    /*
     Bukkit.getPluginManager().registerEvents(new FoodListener(this), this);
     Bukkit.getPluginManager().registerEvents(new CraftingListener(this), this);
-    Bukkit.getPluginManager().registerEvents(new EatListener(this), this);
 
     //commands
     this.getCommand("RPGFood").setExecutor(new FoodCommands(this));
@@ -99,14 +101,12 @@ public class FoodsPlugin extends FacePlugin {
         20L * 30, // Start save after 30seconds
         20L * 30 // Run every 30 seconds after that
     );
-
+    */
   }
 
   @Override
   public void disable() {
-
-    saveRPGFood();
-
+    // saveRPGFood();
     HandlerList.unregisterAll(this);
     Bukkit.getScheduler().cancelTasks(this);
   }

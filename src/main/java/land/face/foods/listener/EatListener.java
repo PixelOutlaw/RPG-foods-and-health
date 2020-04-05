@@ -31,6 +31,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -67,29 +68,53 @@ public class EatListener implements Listener {
       } else {
         return;
       }
+      // Handling the case where players are attempting to plant foods
+      // that can be eaten
+      if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.hasBlock()
+          && event.getClickedBlock().getType() == Material.FARMLAND) {
+        if (stack.getType() == Material.CARROT || stack.getType() == Material.BEETROOTS
+            || stack.getType() == Material.POTATO) {
+          return;
+        }
+      }
       if (!stack.getType().isEdible()) {
         return;
       }
       event.setCancelled(true);
-
-      // Obtain RPG Food, or use normal logic if not found
-      //RPGFoods rpgFoods = plugin.getFoodsManager().getFoods(heldItemName);
-
-      int foodAmount = food(stack.getType());
-      float energy = foodAmount * 2f;
-
-      plugin.getStrifePlugin().getEnergyManager().changeEnergy(event.getPlayer(), energy);
-      plugin.getStrifePlugin().getEnergyRegenTask()
-          .addEnergy(event.getPlayer().getUniqueId(), foodAmount * 3, 3600);
-
-      event.getPlayer().getWorld().playSound(event.getPlayer().getEyeLocation(),
-          Sound.ENTITY_GENERIC_EAT, 1, 1);
-      setCooldowns(event.getPlayer(), 3600);
-      stack.setAmount(stack.getAmount() - 1);
-
-      // Do RPG Food effects
-      // plugin.consumeFood(event.getPlayer(), rpgFoods, heldItem);
+      doFoodEat(event.getPlayer(), stack);
     }
+  }
+
+  @EventHandler
+  public void onPlayerConsumeFood(PlayerItemConsumeEvent event) {
+    if (!event.getItem().getType().isEdible()) {
+      return;
+    }
+    event.setCancelled(true);
+    if (event.getPlayer().getCooldown(Material.APPLE) > 0) {
+      return;
+    }
+    doFoodEat(event.getPlayer(), event.getItem());
+  }
+
+  private void doFoodEat(Player player, ItemStack stack) {
+    // Obtain RPG Food, or use normal logic if not found
+    //RPGFoods rpgFoods = plugin.getFoodsManager().getFoods(heldItemName);
+
+    int foodAmount = food(stack.getType());
+    float energy = foodAmount * 2f;
+
+    plugin.getStrifePlugin().getEnergyManager().changeEnergy(player, energy);
+    plugin.getStrifePlugin().getEnergyRegenTask()
+        .addEnergy(player.getUniqueId(), foodAmount * 3, 3600);
+
+    player.getWorld().playSound(player.getEyeLocation(),
+        Sound.ENTITY_GENERIC_EAT, 1, 1);
+    setCooldowns(player, 3600);
+    stack.setAmount(stack.getAmount() - 1);
+
+    // Do RPG Food effects
+    // plugin.consumeFood(event.getPlayer(), rpgFoods, heldItem);
   }
 
   @EventHandler
